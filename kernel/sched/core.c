@@ -4574,7 +4574,7 @@ static u32 count_child_tasks(struct task_struct *p)
 	return cnt;
 }
 
-static inline bool task_is_inheritable(struct task_struct *p)
+static inline bool task_burst_inheritable(struct task_struct *p)
 {
 	return p->sched_class == &fair_sched_class;
 }
@@ -4606,7 +4606,7 @@ static void update_child_burst_direct(struct task_struct *p, u64 now)
 	u32 cnt = 0, sum = 0;
 
 	list_for_each_entry(child, &p->children, sibling) {
-		if (!task_is_inheritable(child))
+		if (!task_burst_inheritable(child))
 			continue;
 		cnt++;
 		sum += child->se.burst_penalty;
@@ -4638,7 +4638,7 @@ static void update_child_burst_topological(struct task_struct *p, u64 now,
 					       struct task_struct, sibling);
 
 		if (!dcnt || !depth) {
-			if (!task_is_inheritable(dec))
+			if (!task_burst_inheritable(dec))
 				continue;
 			cnt++;
 			sum += dec->se.burst_penalty;
@@ -4692,7 +4692,7 @@ static void inherit_burst(struct task_struct *p)
 
 static void sched_post_fork_bore(struct task_struct *p)
 {
-	if (p->sched_class == &fair_sched_class)
+	if (task_burst_inheritable(p))
 		inherit_burst(p);
 
 	p->se.burst_penalty = p->se.prev_burst_penalty;
@@ -10130,7 +10130,7 @@ void __init sched_init(void)
 
 #ifdef CONFIG_SCHED_BORE
 	sched_init_bore();
-	pr_info("BORE (Burst-Oriented Response Enhancer) CPU Scheduler modification 5.1.0 by Masahito Suzuki\n");
+	pr_info("BORE (Burst-Oriented Response Enhancer) CPU Scheduler modification 5.1.11 by Masahito Suzuki\n");
 #endif
 
 	wait_bit_init();

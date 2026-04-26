@@ -163,82 +163,13 @@ const_debug unsigned int sysctl_sched_migration_cost	= 500000UL;
 
 #ifdef CONFIG_SCHED_BORE
 u8 __read_mostly sched_bore = 1;
+u8 __read_mostly sched_burst_exclude_kthreads = 1;
 u8 __read_mostly sched_burst_smoothness_long = 1;
 u8 __read_mostly sched_burst_smoothness_short = 0;
 u8 __read_mostly sched_burst_fork_atavistic = 2;
 u8 __read_mostly sched_burst_penalty_offset = 22;
 unsigned int __read_mostly sched_burst_penalty_scale = 1280;
 unsigned int __read_mostly sched_burst_cache_lifetime = 60000000;
-static int __maybe_unused sixty_four = 64;
-static int __maybe_unused maxval_12_bits = 4095;
-
-#define MAX_BURST_PENALTY (39U << 2)
-
-static inline u32 log2plus1_u64_u32f8(u64 v)
-{
-	u32 msb = fls64(v);
-	s32 excess_bits = msb - 9;
-	u8 fractional = excess_bits >= 0 ? v >> excess_bits : v << -excess_bits;
-
-	return (msb << 8) | fractional;
-}
-
-static inline u32 calc_burst_penalty(u64 burst_time)
-{
-	u32 greed, tolerance, penalty, scaled_penalty;
-
-	greed = log2plus1_u64_u32f8(burst_time);
-	tolerance = sched_burst_penalty_offset << 8;
-	penalty = max(0, (s32)greed - (s32)tolerance);
-	scaled_penalty = penalty * sched_burst_penalty_scale >> 16;
-
-	return min(MAX_BURST_PENALTY, scaled_penalty);
-}
-
-static void update_burst_score(struct sched_entity *se)
-{
-	struct task_struct *p;
-	u8 prio, prev_prio, new_prio;
-
-	if (!entity_is_task(se))
-		return;
-
-	p = task_of(se);
-	prio = p->static_prio - MAX_RT_PRIO;
-	prev_prio = min_t(u8, 39, prio + se->burst_score);
-
-	se->burst_score = se->burst_penalty >> 2;
-
-	new_prio = min_t(u8, 39, prio + se->burst_score);
-	if (new_prio != prev_prio)
-		reweight_task(p, new_prio);
-}
-
-static void update_burst_penalty(struct sched_entity *se)
-{
-	se->curr_burst_penalty = calc_burst_penalty(se->burst_time);
-	se->burst_penalty = max_t(u8, se->prev_burst_penalty,
-				  se->curr_burst_penalty);
-	update_burst_score(se);
-}
-
-static inline u32 binary_smooth(u32 new, u32 old)
-{
-	int increment = new - old;
-
-	return increment >= 0 ?
-		old + (increment >> (int)sched_burst_smoothness_long) :
-		old - (-increment >> (int)sched_burst_smoothness_short);
-}
-
-static void restart_burst(struct sched_entity *se)
-{
-	se->burst_penalty = se->prev_burst_penalty =
-		binary_smooth(se->curr_burst_penalty, se->prev_burst_penalty);
-	se->curr_burst_penalty = 0;
-	se->burst_time = 0;
-	update_burst_score(se);
-}
 #endif
 
 int sched_thermal_decay_shift;
@@ -295,69 +226,6 @@ static unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
 
 #ifdef CONFIG_SYSCTL
 static struct ctl_table sched_fair_sysctls[] = {
-#ifdef CONFIG_SCHED_BORE
-	{
-		.procname	= "sched_bore",
-		.data		= &sched_bore,
-		.maxlen		= sizeof(u8),
-		.mode		= 0644,
-		.proc_handler	= proc_dou8vec_minmax,
-		.extra1		= SYSCTL_ONE,
-		.extra2		= SYSCTL_ONE,
-	},
-	{
-		.procname	= "sched_burst_smoothness_long",
-		.data		= &sched_burst_smoothness_long,
-		.maxlen		= sizeof(u8),
-		.mode		= 0644,
-		.proc_handler	= proc_dou8vec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_ONE,
-	},
-	{
-		.procname	= "sched_burst_smoothness_short",
-		.data		= &sched_burst_smoothness_short,
-		.maxlen		= sizeof(u8),
-		.mode		= 0644,
-		.proc_handler	= proc_dou8vec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_ONE,
-	},
-	{
-		.procname	= "sched_burst_fork_atavistic",
-		.data		= &sched_burst_fork_atavistic,
-		.maxlen		= sizeof(u8),
-		.mode		= 0644,
-		.proc_handler	= proc_dou8vec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_THREE,
-	},
-	{
-		.procname	= "sched_burst_penalty_offset",
-		.data		= &sched_burst_penalty_offset,
-		.maxlen		= sizeof(u8),
-		.mode		= 0644,
-		.proc_handler	= proc_dou8vec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= &sixty_four,
-	},
-	{
-		.procname	= "sched_burst_penalty_scale",
-		.data		= &sched_burst_penalty_scale,
-		.maxlen		= sizeof(unsigned int),
-		.mode		= 0644,
-		.proc_handler	= proc_douintvec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= &maxval_12_bits,
-	},
-	{
-		.procname	= "sched_burst_cache_lifetime",
-		.data		= &sched_burst_cache_lifetime,
-		.maxlen		= sizeof(unsigned int),
-		.mode		= 0644,
-		.proc_handler	= proc_douintvec,
-	},
-#endif
 	{
 		.procname       = "sched_child_runs_first",
 		.data           = &sysctl_sched_child_runs_first,
@@ -733,6 +601,118 @@ static int se_is_idle(struct sched_entity *se)
 
 #endif	/* CONFIG_FAIR_GROUP_SCHED */
 
+#ifdef CONFIG_SCHED_BORE
+#define MAX_BURST_PENALTY (39U << 2)
+
+static inline u32 log2plus1_u64_u32f8(u64 v)
+{
+	u32 msb = fls64(v);
+	u8 fractional = v << (64 - msb) >> 55;
+
+	return (msb << 8) | fractional;
+}
+
+static inline u32 calc_burst_penalty(u64 burst_time)
+{
+	u32 greed, tolerance, penalty, scaled_penalty;
+
+	greed = log2plus1_u64_u32f8(burst_time);
+	tolerance = sched_burst_penalty_offset << 8;
+	penalty = max(0, (s32)greed - (s32)tolerance);
+	scaled_penalty = penalty * sched_burst_penalty_scale >> 16;
+
+	return min(MAX_BURST_PENALTY, scaled_penalty);
+}
+
+static inline u8 effective_prio(struct task_struct *p)
+{
+	u8 prio = p->static_prio - MAX_RT_PRIO;
+
+	if (likely(sched_bore))
+		prio += p->se.burst_score;
+
+	return min_t(u8, 39, prio);
+}
+
+static void update_burst_score(struct sched_entity *se)
+{
+	struct task_struct *p;
+	u8 prev_prio, new_prio;
+	u8 burst_score = 0;
+
+	if (!entity_is_task(se))
+		return;
+
+	p = task_of(se);
+	prev_prio = effective_prio(p);
+
+	if (!((p->flags & PF_KTHREAD) && likely(sched_burst_exclude_kthreads)))
+		burst_score = se->burst_penalty >> 2;
+
+	se->burst_score = burst_score;
+
+	new_prio = effective_prio(p);
+	if (new_prio != prev_prio)
+		reweight_task(p, new_prio);
+}
+
+static void update_burst_penalty(struct sched_entity *se)
+{
+	se->curr_burst_penalty = calc_burst_penalty(se->burst_time);
+	se->burst_penalty = max_t(u8, se->prev_burst_penalty,
+				  se->curr_burst_penalty);
+	update_burst_score(se);
+}
+
+static inline u32 binary_smooth(u32 new, u32 old)
+{
+	int increment = new - old;
+
+	return increment >= 0 ?
+		old + (increment >> (int)sched_burst_smoothness_long) :
+		old - (-increment >> (int)sched_burst_smoothness_short);
+}
+
+static void restart_burst(struct sched_entity *se)
+{
+	se->burst_penalty = se->prev_burst_penalty =
+		binary_smooth(se->curr_burst_penalty, se->prev_burst_penalty);
+	se->curr_burst_penalty = 0;
+	se->burst_time = 0;
+	update_burst_score(se);
+}
+
+static void reset_task_weights_bore(void)
+{
+	struct task_struct *task;
+	struct rq *rq;
+	struct rq_flags rf;
+
+	write_lock_irq(&tasklist_lock);
+	for_each_process(task) {
+		if (task->sched_class != &fair_sched_class)
+			continue;
+		rq = task_rq(task);
+		rq_lock_irqsave(rq, &rf);
+		reweight_task(task, effective_prio(task));
+		rq_unlock_irqrestore(rq, &rf);
+	}
+	write_unlock_irq(&tasklist_lock);
+}
+
+int sched_bore_update_handler(struct ctl_table *table, int write,
+			      void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	int ret = proc_dou8vec_minmax(table, write, buffer, lenp, ppos);
+
+	if (ret || !write)
+		return ret;
+
+	reset_task_weights_bore();
+	return 0;
+}
+#endif
+
 static __always_inline
 void account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec);
 
@@ -1091,10 +1071,8 @@ static void update_curr(struct cfs_rq *cfs_rq)
 #ifdef CONFIG_SCHED_BORE
 	curr->burst_time += delta_exec;
 	update_burst_penalty(curr);
-	curr->vruntime += max(1ULL, calc_delta_fair(delta_exec, curr));
-#else
-	curr->vruntime += calc_delta_fair(delta_exec, curr);
 #endif
+	curr->vruntime += calc_delta_fair(delta_exec, curr);
 	update_min_vruntime(cfs_rq);
 
 	if (entity_is_task(curr)) {
