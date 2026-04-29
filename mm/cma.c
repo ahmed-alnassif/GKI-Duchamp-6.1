@@ -443,6 +443,7 @@ struct page *__cma_alloc(struct cma *cma, unsigned long count,
 	int max_retries = 5;
 	const char *name = cma ? cma->name : NULL;
 	bool bypass = false;
+	u64 stime = 0;
 
 	trace_android_vh_cma_alloc_bypass(cma, count, align, gfp_mask,
 				&page, &bypass);
@@ -472,6 +473,7 @@ struct page *__cma_alloc(struct cma *cma, unsigned long count,
 	if (bitmap_count > bitmap_maxno)
 		goto out;
 
+	trace_android_vh_cma_alloc_lat_start(&stime);
 	for (;;) {
 		spin_lock_irq(&cma->lock);
 		bitmap_no = bitmap_find_next_zero_area_off(cma->bitmap,
@@ -552,6 +554,7 @@ struct page *__cma_alloc(struct cma *cma, unsigned long count,
 out:
 	trace_cma_alloc_finish(name, pfn, page, count, align);
 	trace_android_vh_cma_alloc_end(cma, pfn, page, count, align, ret);
+	trace_android_vh_cma_alloc_lat_end(stime, count);
 	if (page) {
 		count_vm_event(CMA_ALLOC_SUCCESS);
 		cma_sysfs_account_success_pages(cma, count);
