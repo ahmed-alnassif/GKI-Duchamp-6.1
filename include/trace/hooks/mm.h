@@ -426,6 +426,9 @@ DECLARE_HOOK(android_vh_alloc_pages_start,
 DECLARE_HOOK(android_vh_alloc_pages_end,
 	TP_PROTO(unsigned int order, gfp_t alloc_gfp, u64 stime),
 	TP_ARGS(order, alloc_gfp, stime));
+DECLARE_HOOK(android_vh_do_group_exit,
+	TP_PROTO(struct task_struct *tsk),
+	TP_ARGS(tsk));
 DECLARE_HOOK(android_vh_alloc_pages_slowpath_start,
 	TP_PROTO(u64 *stime),
 	TP_ARGS(stime));
@@ -447,6 +450,12 @@ DECLARE_HOOK(android_vh_add_file_rmap,
 DECLARE_HOOK(android_vh_remove_file_rmap,
 	TP_PROTO(struct page *page, bool compound),
 	TP_ARGS(page, compound));
+DECLARE_HOOK(android_vh_folio_end_writeback,
+	TP_PROTO(struct folio *folio),
+	TP_ARGS(folio));
+DECLARE_HOOK(android_vh_folio_start_writeback,
+	TP_PROTO(struct folio *folio),
+	TP_ARGS(folio));
 #endif /* _TRACE_HOOK_MM_H */
 
 /* This part must be outside protection */
