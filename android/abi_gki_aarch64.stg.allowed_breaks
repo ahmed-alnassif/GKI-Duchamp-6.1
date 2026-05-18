@@ -194,3 +194,7 @@ type 'enum pd_msg_request' changed
 
 type 'enum tcpm_ams' changed
   enumerator 'REVISION_INFORMATION' (34) was added
+
+type 'struct task_struct' changed
+  member 'u64 android_kabi_reserved3' was removed
+  member 'union { struct { unsigned int user_dumpable:1; }; struct { u64 android_kabi_reserved3; }; union { }; }' was added
