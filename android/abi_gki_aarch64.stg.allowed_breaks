@@ -186,6 +186,11 @@ type 'struct wiphy' changed
 type 'struct trace_event_file' changed
   member 'unsigned long flags' was removed
   member 'union { unsigned long flags; struct __trace_event_file_ref ref; }' was added
+
+type 'struct task_struct' changed
+  member 'u64 android_kabi_reserved3' was removed
+  member 'union { struct { unsigned int user_dumpable:1; }; struct { u64 android_kabi_reserved3; }; union { }; }' was added
+
 type 'struct tcpm_port' changed
   member 'struct pd_revision_info pd_rev' was added
 
@@ -194,7 +199,3 @@ type 'enum pd_msg_request' changed
 
 type 'enum tcpm_ams' changed
   enumerator 'REVISION_INFORMATION' (34) was added
-
-type 'struct task_struct' changed
-  member 'u64 android_kabi_reserved3' was removed
-  member 'union { struct { unsigned int user_dumpable:1; }; struct { u64 android_kabi_reserved3; }; union { }; }' was added
