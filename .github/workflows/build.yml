@@ -133,7 +133,7 @@ jobs:
           KERNEL_REPO: ${{ secrets.KERNEL_REPO }}
         run: |
           _error() {
-              echo "âŒ ERROR: $*"
+              echo "❌ ERROR: $*"
               let ret++
           }
 
@@ -164,7 +164,7 @@ jobs:
       - name: Run Build Script
         env:
           GH_TOKEN: ${{ github.token }}
-          KERNEL_REPO: https://github.com/lrahul905-hue/android_kernel_common-6.1
+          KERNEL_REPO: https://github.com/ahmed-alnassif/android_kernel_common-6.1
           KSU: ${{ matrix.KSU }}
           KSU_COMPAT: ${{ matrix.KSU_COMPAT }}
           KSU_SUSFS: ${{ matrix.KSU_SUSFS }}
@@ -311,15 +311,15 @@ jobs:
               echo ""
             fi
             cat << EOF
-            ### ðŸ“¢ ${{ env.RELEASE_NAME }}
+            ### 📢 ${{ env.RELEASE_NAME }}
 
             **Build Information:**
-            - ðŸ§ **Kernel:** ${{ env.RELEASE_NAME }}
-            - ðŸ”– **Version:** ${{ env.LINUX_VERSION }} (android14-6.1-lts)
-            - ðŸ“¦ **Variants:**
+            - 🐧 **Kernel:** ${{ env.RELEASE_NAME }}
+            - 🔖 **Version:** ${{ env.LINUX_VERSION }} (android14-6.1-lts)
+            - 📦 **Variants:**
             $(echo "$VARIANTS" | sed 's/^/  - /')
-            - ðŸ›¡ï¸ **SuSFS:** à¶ž ${{ env.SUSFS_VERSION }}
-            - âš™ï¸ **Compiler:** ${{ env.COMPILER_STRING }}
+            - 🛡️ **SuSFS:** ඞ ${{ env.SUSFS_VERSION }}
+            - ⚙️ **Compiler:** ${{ env.COMPILER_STRING }}
 
             >[!Important]
             >- Got a bootloop? Switch to a Compat variant.
@@ -327,21 +327,21 @@ jobs:
             **Performance & Efficiency Tweaks**
             Balanced optimizations for smoother UI, better multitasking & gaming on Poco X6 Pro (and similar **6.1.xx-android14** GKI kernel devices):
 
-            - Timer frequency **HZ=300** â†’ noticeably lower input lag & snappier feel
-            - CPU governors: **schedutil** + **ondemand** â†’ efficient & responsive scaling
-            - Modern memory: **Multi-Gen LRU (MGLRU)** enabled â†’ huge multitasking & battery win
-            - zRAM: compressed swap with **LZ4** + **writeback** + tracking â†’ more usable RAM in heavy use
-            - I/O scheduler: **mq-deadline** as default â†’ low-latency on fast UFS 4.0 storage
-            - Networking: **TCP BBRv3** + **TCP Westwood+** + **FQ** + **ECN** + **IPv6 HL support** + **TCP_NODELAY forced** â†’ better speed on WiFi/mobile data
-            - IP Set full support + IPv6 NAT â†’ better tethering & VPN performance
-            - F2FS tuning: reduced GC sleep (50ms), enlarged fsync blocks, reduced congestion timeout â†’ smoother I/O
-            - ext4 commit age extended to 30s â†’ fewer disk writes, better battery
-            - Memory optimizations: faster memcpy, memcmp, memset (up to 50%) + 3x faster integer sqrt â†’ lower CPU overhead
-            - File struct 8-byte aligned + clear page 16-byte aligned â†’ better cache performance
-            - Freeze timeout reduced 20sâ†’1s + wakelock cap 500ms + minimized alarm wakeup â†’ less battery drain
-            - Scheduler: efficient CPU scan order + DynamIQ cache buddy disabled + branch prediction hints â†’ smarter core selection
-            - Unicode filename validation â†’ prevents crashes from invalid UTF-8 on vfat/exfat
-            - Silenced IRQ & system log spam â†’ cleaner dmesg, easier debugging
+            - Timer frequency **HZ=300** → noticeably lower input lag & snappier feel
+            - CPU governors: **schedutil** + **ondemand** → efficient & responsive scaling
+            - Modern memory: **Multi-Gen LRU (MGLRU)** enabled → huge multitasking & battery win
+            - zRAM: compressed swap with **LZ4** + **writeback** + tracking → more usable RAM in heavy use
+            - I/O scheduler: **mq-deadline** as default → low-latency on fast UFS 4.0 storage
+            - Networking: **TCP BBRv3** + **TCP Westwood+** + **FQ** + **ECN** + **IPv6 HL support** + **TCP_NODELAY forced** → better speed on WiFi/mobile data
+            - IP Set full support + IPv6 NAT → better tethering & VPN performance
+            - F2FS tuning: reduced GC sleep (50ms), enlarged fsync blocks, reduced congestion timeout → smoother I/O
+            - ext4 commit age extended to 30s → fewer disk writes, better battery
+            - Memory optimizations: faster memcpy, memcmp, memset (up to 50%) + 3x faster integer sqrt → lower CPU overhead
+            - File struct 8-byte aligned + clear page 16-byte aligned → better cache performance
+            - Freeze timeout reduced 20s→1s + wakelock cap 500ms + minimized alarm wakeup → less battery drain
+            - Scheduler: efficient CPU scan order + DynamIQ cache buddy disabled + branch prediction hints → smarter core selection
+            - Unicode filename validation → prevents crashes from invalid UTF-8 on vfat/exfat
+            - Silenced IRQ & system log spam → cleaner dmesg, easier debugging
             - BBG (baseband-guard) a lightweight **LSM (Linux Security Module)** for the Android kernel, designed to block unauthorized writes to critical partitions/device nodes at the system level. This reduces the risk of malicious or accidental tampering with critical components such as the baseband and boot chain.
 
             >[!Tip]
@@ -421,3 +421,4 @@ jobs:
             release-artifacts/checksums.txt
             release-artifacts/checksums-md5.txt
           body_path: release_body.md
+          
