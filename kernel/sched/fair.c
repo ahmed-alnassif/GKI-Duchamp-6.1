@@ -162,7 +162,7 @@ EXPORT_SYMBOL_GPL(sysctl_sched_wakeup_granularity);
 const_debug unsigned int sysctl_sched_migration_cost	= 500000UL;
 
 #ifdef CONFIG_SCHED_BORE
-u8 __read_mostly sched_bore = 0;
+u8 __read_mostly sched_bore = 1;
 u8 __read_mostly sched_burst_exclude_kthreads = 1;
 u8 __read_mostly sched_burst_smoothness_long = 1;
 u8 __read_mostly sched_burst_smoothness_short = 0;
