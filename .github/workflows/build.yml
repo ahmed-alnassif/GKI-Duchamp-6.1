@@ -1,20 +1,33 @@
 name: GKI-Duchamp Builder
 
 on:
-  workflow_call:
+    workflow_call:
     inputs:
       TODO:
+        description: 'Task to perform'
+        required: false
         type: string
       KSU:
+        description: 'KernelSU version'
+        required: false
         type: string
       KSU_SUSFS:
+        description: 'SUSFS version'
+        required: false
         type: string
       LAST_BUILD:
+        description: 'Last build info'
+        required: false
         type: string
       STATUS:
+        description: 'Build status'
+        required: false
         type: string
       TEST:
+        description: 'Test mode'
+        required: false
         type: string
+        
 
   workflow_dispatch:
     inputs:
