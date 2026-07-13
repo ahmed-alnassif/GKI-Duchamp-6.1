@@ -77,9 +77,7 @@ static void drain_openssl_errors(void)
 		}					\
 	} while(0)
 
-#ifdef USE_PKCS11_ENGINE
 static const char *key_pass;
-#endif
 static BIO *wb;
 static char *cert_dst;
 static int kbuild_verbose;
