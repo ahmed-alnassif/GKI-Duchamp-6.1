@@ -402267,6 +402267,15 @@ elf_symbol {
   full_name: "pm_suspend_target_state"
 }
 elf_symbol {
+  id: 0x6c5176f8
+  name: "pm_system_cancel_wakeup"
+  is_defined: true
+  symbol_type: FUNCTION
+  crc: 0xa422114c
+  type_id: 0x10985193
+  full_name: "pm_system_cancel_wakeup"
+}
+elf_symbol {
   id: 0x57ba6430
   name: "pm_system_wakeup"
   is_defined: true
@@ -432264,6 +432273,7 @@ interface {
   symbol_id: 0x64f92138
   symbol_id: 0x7ee02b97
   symbol_id: 0x2e13b831
+  symbol_id: 0x6c5176f8
   symbol_id: 0x57ba6430
   symbol_id: 0x131272a2
   symbol_id: 0x914856be
